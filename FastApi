@@ -1,0 +1,21 @@
+from fastapi import FastAPI
+from langchain.agents import create_pandas_dataframe_agent
+from langchain.llms import OpenAI
+import pandas as pd
+
+app = FastAPI()
+
+# Load Titanic dataset
+df = pd.read_csv("titanic.csv")
+
+# Create LangChain agent
+agent = create_pandas_dataframe_agent(OpenAI(temperature=0), df, verbose=True)
+
+@app.post("/query")
+async def query_agent(query: str):
+    response = agent.run(query)
+    return {"response": response}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
