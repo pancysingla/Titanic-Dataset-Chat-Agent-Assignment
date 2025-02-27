@@ -1,0 +1,44 @@
+from langchain.agents import Tool
+from langchain.agents import initialize_agent
+from langchain.llms import OpenAI
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import io
+import base64
+
+df = pd.read_csv("titanic.csv")
+
+def generate_visualization(query):
+    plt.figure(figsize=(10, 6))
+    if "histogram" in query.lower() and "age" in query.lower():
+        sns.histplot(df['Age'].dropna(), kde=True)
+        plt.title("Histogram of Passenger Ages")
+        plt.xlabel("Age")
+        plt.ylabel("Count")
+    elif "embarked" in query.lower():
+        sns.countplot(x='Embarked', data=df)
+        plt.title("Passengers Embarked from Each Port")
+        plt.xlabel("Port")
+        plt.ylabel("Count")
+    
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    img_str = base64.b64encode(buf.read()).decode()
+    return img_str
+
+tools = [
+    Tool(
+        name="Pandas Dataframe",
+        func=lambda x: agent.run(x),
+        description="Useful for answering questions about the Titanic dataset"
+    ),
+    Tool(
+        name="Data Visualization",
+        func=generate_visualization,
+        description="Useful for creating visualizations of the Titanic dataset"
+    )
+]
+
+agent = initialize_agent(tools, OpenAI(temperature=0), agent="zero-shot-react-description", verbose=True)
